@@ -3270,6 +3270,7 @@ getDecryptData(@Body() data):any {
             decipher.final(),
         ]);
 
+        
         // Define decrypted file path
         const decryptedFolder = path.join(__dirname, '..', 'public', 'decryptedFiles');
         if (!fs.existsSync(decryptedFolder)) {
