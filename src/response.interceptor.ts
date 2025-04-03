@@ -1,5 +1,7 @@
-/* code with dto message  */
-import {Injectable,NestInterceptor,ExecutionContext,CallHandler,BadRequestException,HttpException} from '@nestjs/common';
+/* code with dto message */
+
+
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException, HttpException } from '@nestjs/common';
 import { Observable, map, catchError, throwError } from 'rxjs';
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
@@ -32,6 +34,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
             const errorMessages = response['errors'];
             console.log('DTO Validation Errors:', errorMessages);
             return throwError(() =>
+
+
               new HttpException(
                 {
                   status: false,
@@ -42,6 +46,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
                 400,
               ),
             );
+
           }
         }
         return throwError(() => err);
@@ -53,6 +58,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
     const keys = Object.keys(data).filter(
       (key) => !excludedKeys.includes(key),
     );
-    return keys.length === 1 ? data[keys[0]] : data;
+    let nested_keys;
+    if (Object.keys(data[`${keys}`]).length === 1) {
+      nested_keys = Object.keys(data[`${keys}`]);
+    }
+    let outer_key= Object.keys(data[`${keys}`])    
+    return outer_key.length === 1 ? nested_keys? data[`${keys}`][`${nested_keys}`] : data[`${keys}`][0]:data[`${keys}`]
+   
   }
 }
+
