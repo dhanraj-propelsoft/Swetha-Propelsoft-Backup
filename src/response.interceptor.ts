@@ -1,6 +1,3 @@
-/* code with dto message */
-
-
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException, HttpException } from '@nestjs/common';
 import { Observable, map, catchError, throwError } from 'rxjs';
 @Injectable()
@@ -11,19 +8,26 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
       map((data) => {
         const dataContent = this.extractData(data);
         const dataContentKey = Object.keys(dataContent).toString();
-        const data_value = data['status'] ? dataContentKey.length === 1 ? dataContent[`${dataContentKey}`] : dataContent : (data['error'] && data['error']['errorMessage']) ? data['error']['errorMessage'] : 'No data found';
-        const data_key = data['error'] ? "error" : "data";
-        if (data) {
-          throw new HttpException(
-            {
-              status: data['status'],
-              statusCode: data['statusCode'],
-              ...(data['status'] && { message: data['message'] }),
-              [data_key]: data_value,
-            },
-            data['statusCode'],
-          );
-        }
+        const data_value = data['status']
+          ? dataContentKey.length === 1
+            ? dataContent[`${dataContentKey}`]
+            : dataContent
+          : (data['error'] && data['error']['errorMessage'])
+            ? data['error']['errorMessage']
+            : 'No data found';
+
+        const data_key = data['error'] ? 'error' : 'data';
+
+        return {
+          status: data['status'],
+          statusCode: data['statusCode'],
+          ...(data['status'] && { message: data['message']}),
+          ...(
+            data_value && Object.keys(data_value).length > 0
+              ? { [data_key]: data_value }
+              : {}
+          ),
+        };
       }),
       catchError((err) => {
         console.log('Caught Error:', err);
@@ -58,13 +62,25 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
     const keys = Object.keys(data).filter(
       (key) => !excludedKeys.includes(key),
     );
-    let nested_keys;
-    if (Object.keys(data[`${keys}`]).length === 1) {
-      nested_keys = Object.keys(data[`${keys}`]);
+    console.log("keys",keys);
+    
+    if (keys.length>0) {
+      console.log("keys present");
+      
+      let nested_keys;
+      if (Object.keys(data[`${keys}`]).length === 1) {
+        nested_keys = Object.keys(data[`${keys}`]);
+      }
+      let outer_key = Object.keys(data[`${keys}`])
+      console.log("keys present data: " ,outer_key.length === 1 ? nested_keys ? data[`${keys}`][`${nested_keys}`] : data[`${keys}`][0] : data[`${keys}`]
+      );
+      
+      return outer_key.length === 1 ? nested_keys ? data[`${keys}`][`${nested_keys}`] : data[`${keys}`][0] : data[`${keys}`]
+
     }
-    let outer_key= Object.keys(data[`${keys}`])    
-    return outer_key.length === 1 ? nested_keys? data[`${keys}`][`${nested_keys}`] : data[`${keys}`][0]:data[`${keys}`]
-   
+    else{
+      console.log("keys absent");
+      return {}
+    }
   }
 }
-
